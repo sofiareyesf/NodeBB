@@ -50,6 +50,79 @@ define('settings/object', function () {
 		}
 	}
 
+	/**
+	 * Creates a separator element, handling any errors.
+	 * @param {string} separator - The separator data.
+	 * @returns {jQuery} - The separator element.
+	 */
+	function createSeparator(separator) {
+		try {
+			return $(separator);
+		} catch (_error) {
+			return $(document.createTextNode(separator));
+		}
+	}
+
+	/**
+	 * Ensures that the value is an object.
+	 * @param {any} value - The value to check.
+	 * @returns {Object} - The value as an object.
+	 */
+	function ensureObject(value) {
+		return typeof value === 'object' ? value : {};
+	}
+
+	/**
+	 * Ensures that the attributes are an object.
+	 * @param {any} attributes - The attributes to check.
+	 * @returns {Object} - The attributes as an object.
+	 */
+	function prepareAttributes(attributes) {
+		return typeof attributes === 'object' ? attributes : {};
+	}
+
+	/**
+	 * Processes a single property and adds it to the element.
+	 * @param {jQuery} element - The element to append to.
+	 * @param {string} key - The key of the object.
+	 * @param {Object} attributes - The attributes of the property.
+	 * @param {string} propertyName - The name of the property.
+	 * @param {Object} value - The value to fill the property with.
+	 * @param {jQuery} separator - The separator element.
+	 */
+	function processProperty(element, key, attributes, propertyName, value, separator) {
+		if (value[propertyName] === undefined && attributes['data-new'] !== undefined) {
+			value[propertyName] = attributes['data-new'];
+		}
+		addObjectPropertyElement(
+			element,
+			key,
+			attributes,
+			propertyName,
+			value[propertyName],
+			separator.clone(),
+			function (el) { element.append(el); }
+		);
+	}
+
+	/**
+	 * Iterates over properties and processes each one.
+	 * @param {jQuery} element - The element to append properties to.
+	 * @param {Array} properties - The properties to process.
+	 * @param {string} key - The key of the object.
+	 * @param {Object} value - The value to fill the properties with.
+	 * @param {jQuery} separator - The separator element.
+	 */
+	function processProperties(element, properties, key, value, separator) {
+		for (const propertyIndex in properties) {
+			if (properties.hasOwnProperty(propertyIndex)) {
+				const attributes = prepareAttributes(properties[propertyIndex]);
+				const propertyName = attributes['data-prop'] || attributes['data-property'] || propertyIndex;
+				processProperty(element, key, attributes, propertyName, value, separator);
+			}
+		}
+	}
+
 	const SettingsObject = {
 		types: ['object'],
 		use: function () {
@@ -61,43 +134,13 @@ define('settings/object', function () {
 		set: function (element, value) {
 			const properties = element.data('attributes') || element.data('properties');
 			const key = element.data('key') || element.data('parent');
-			let separator = element.data('split') || ', ';
-			let propertyIndex;
-			let propertyName;
-			let attributes;
-			separator = (function () {
-				try {
-					return $(separator);
-				} catch (_error) {
-					return $(document.createTextNode(separator));
-				}
-			}());
+			const separator = createSeparator(element.data('split') || ', ');
+
 			element.empty();
-			if (typeof value !== 'object') {
-				value = {};
-			}
+			value = ensureObject(value);
+
 			if (Array.isArray(properties)) {
-				for (propertyIndex in properties) {
-					if (properties.hasOwnProperty(propertyIndex)) {
-						attributes = properties[propertyIndex];
-						if (typeof attributes !== 'object') {
-							attributes = {};
-						}
-						propertyName = attributes['data-prop'] || attributes['data-property'] || propertyIndex;
-						if (value[propertyName] === undefined && attributes['data-new'] !== undefined) {
-							value[propertyName] = attributes['data-new'];
-						}
-						addObjectPropertyElement(
-							element,
-							key,
-							attributes,
-							propertyName,
-							value[propertyName],
-							separator.clone(),
-							function (el) { element.append(el); }
-						);
-					}
-				}
+				processProperties(element, properties, key, value, separator);
 			}
 		},
 		get: function (element, trim, empty) {
