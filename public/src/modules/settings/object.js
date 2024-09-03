@@ -51,33 +51,6 @@ define('settings/object', function () {
 		}
 	}
 
-	function processProperties(element, properties, key, value, separator) {
-		console.log("SOFIA"); 
-		for (const propertyIndex in properties) {
-			if (properties.hasOwnProperty(propertyIndex)) {
-				const attributes = prepareAttributes(properties[propertyIndex]);
-				const propertyName = attributes['data-prop'] || attributes['data-property'] || propertyIndex;
-				processProperty(element, key, attributes, propertyName, value, separator);
-			}
-		}
-	}
-
-	function processProperty(element, key, attributes, propertyName, value, separator) {
-		console.log("SOFIA");
-		if (value[propertyName] === undefined && attributes['data-new'] !== undefined) {
-			value[propertyName] = attributes['data-new'];
-		}
-		addObjectPropertyElement(
-			element,
-			key,
-			attributes,
-			propertyName,
-			value[propertyName],
-			separator.clone(),
-			function (el) { element.append(el); }
-		);
-	}
-
 	const SettingsObject = {
 		types: ['object'],
 		use: function () {
@@ -90,21 +63,11 @@ define('settings/object', function () {
 			console.log("SOFIA"); 
 			const properties = element.data('attributes') || element.data('properties');
 			const key = element.data('key') || element.data('parent');
-			let separator = element.data('split') || ', ';
-			let propertyIndex;
-			let propertyName;
-			let attributes;
-			separator = (function () {
-				try {
-					return $(separator);
-				} catch (_error) {
-					return $(document.createTextNode(separator));
-				}
-			}());
+			const separator = createSeparator(element.data('split') || ', ');
+
 			element.empty();
-			if (typeof value !== 'object') {
-				value = {};
-			}
+			value = ensureObject(value);
+
 			if (Array.isArray(properties)) {
 				processProperties(element, properties, key, value, separator);
 			}
