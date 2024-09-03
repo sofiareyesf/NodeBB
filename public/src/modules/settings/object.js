@@ -14,6 +14,7 @@ define('settings/object', function () {
 	 @param insertCb The callback to insert the elements.
 	 */
 	function addObjectPropertyElement(field, key, attributes, prop, value, separator, insertCb) {
+		console.log("SOFIA")
 		const prepend = attributes['data-prepend'];
 		const append = attributes['data-append'];
 		delete attributes['data-prepend'];
@@ -50,6 +51,33 @@ define('settings/object', function () {
 		}
 	}
 
+	function processProperties(element, properties, key, value, separator) {
+		console.log("SOFIA"); 
+		for (const propertyIndex in properties) {
+			if (properties.hasOwnProperty(propertyIndex)) {
+				const attributes = prepareAttributes(properties[propertyIndex]);
+				const propertyName = attributes['data-prop'] || attributes['data-property'] || propertyIndex;
+				processProperty(element, key, attributes, propertyName, value, separator);
+			}
+		}
+	}
+
+	function processProperty(element, key, attributes, propertyName, value, separator) {
+		console.log("SOFIA");
+		if (value[propertyName] === undefined && attributes['data-new'] !== undefined) {
+			value[propertyName] = attributes['data-new'];
+		}
+		addObjectPropertyElement(
+			element,
+			key,
+			attributes,
+			propertyName,
+			value[propertyName],
+			separator.clone(),
+			function (el) { element.append(el); }
+		);
+	}
+
 	const SettingsObject = {
 		types: ['object'],
 		use: function () {
@@ -59,6 +87,7 @@ define('settings/object', function () {
 			return helper.createElement(tagName || 'div');
 		},
 		set: function (element, value) {
+			console.log("SOFIA"); 
 			const properties = element.data('attributes') || element.data('properties');
 			const key = element.data('key') || element.data('parent');
 			let separator = element.data('split') || ', ';
@@ -77,27 +106,7 @@ define('settings/object', function () {
 				value = {};
 			}
 			if (Array.isArray(properties)) {
-				for (propertyIndex in properties) {
-					if (properties.hasOwnProperty(propertyIndex)) {
-						attributes = properties[propertyIndex];
-						if (typeof attributes !== 'object') {
-							attributes = {};
-						}
-						propertyName = attributes['data-prop'] || attributes['data-property'] || propertyIndex;
-						if (value[propertyName] === undefined && attributes['data-new'] !== undefined) {
-							value[propertyName] = attributes['data-new'];
-						}
-						addObjectPropertyElement(
-							element,
-							key,
-							attributes,
-							propertyName,
-							value[propertyName],
-							separator.clone(),
-							function (el) { element.append(el); }
-						);
-					}
-				}
+				processProperties(element, properties, key, value, separator);
 			}
 		},
 		get: function (element, trim, empty) {
