@@ -32,14 +32,14 @@ module.exports = function (User) {
 			return [];
 		}
 
-		const keys = uids.map(uid => `user:${uid}:settings`);
+		const keys = uids.map((uid) => `user:${uid}:settings`);
 		let settings = await db.getObjects(keys);
 		settings = settings.map((userSettings, index) => {
 			userSettings = userSettings || {};
 			userSettings.uid = uids[index];
 			return userSettings;
 		});
-		return await Promise.all(settings.map(s => onSettingsLoaded(s.uid, s)));
+		return await Promise.all(settings.map((s) => onSettingsLoaded(s.uid, s)));
 	};
 
 	async function onSettingsLoaded(uid, settings) {
@@ -75,7 +75,9 @@ module.exports = function (User) {
 		settings.topicSearchEnabled = parseInt(getSetting(settings, 'topicSearchEnabled', 0), 10) === 1;
 		settings.updateUrlWithPostIndex = parseInt(getSetting(settings, 'updateUrlWithPostIndex', 1), 10) === 1;
 		settings.bootswatchSkin = validator.escape(String(settings.bootswatchSkin || ''));
-		settings.homePageRoute = validator.escape(String(settings.homePageRoute || '')).replace(/&#x2F;/g, '/');
+		settings.homePageRoute = validator
+			.escape(String(settings.homePageRoute || ''))
+			.replace(/&#x2F;/g, '/');
 		settings.scrollToMyPost = parseInt(getSetting(settings, 'scrollToMyPost', 1), 10) === 1;
 		settings.categoryWatchState = getSetting(settings, 'categoryWatchState', 'notwatching');
 
@@ -96,13 +98,20 @@ module.exports = function (User) {
 		return defaultValue;
 	}
 
-	// Helper function to validate pagination settings
 	function validatePagination(data, maxPostsPerPage, maxTopicsPerPage) {
-		if (!data.postsPerPage || parseInt(data.postsPerPage, 10) <= 1 || parseInt(data.postsPerPage, 10) > maxPostsPerPage) {
+		if (
+			!data.postsPerPage ||
+			parseInt(data.postsPerPage, 10) <= 1 ||
+			parseInt(data.postsPerPage, 10) > maxPostsPerPage
+		) {
 			throw new Error(`[[error:invalid-pagination-value, 2, ${maxPostsPerPage}]]`);
 		}
 
-		if (!data.topicsPerPage || parseInt(data.topicsPerPage, 10) <= 1 || parseInt(data.topicsPerPage, 10) > maxTopicsPerPage) {
+		if (
+			!data.topicsPerPage ||
+			parseInt(data.topicsPerPage, 10) <= 1 ||
+			parseInt(data.topicsPerPage, 10) > maxTopicsPerPage
+		) {
 			throw new Error(`[[error:invalid-pagination-value, 2, ${maxTopicsPerPage}]]`);
 		}
 	}
@@ -110,7 +119,7 @@ module.exports = function (User) {
 	User.saveSettings = async function (uid, data) {
 		const maxPostsPerPage = meta.config.maxPostsPerPage || 20;
 		const maxTopicsPerPage = meta.config.maxTopicsPerPage || 20;
-		
+
 		validatePagination(data, maxPostsPerPage, maxTopicsPerPage);
 
 		const languageCodes = await languages.listCodes();
@@ -130,8 +139,14 @@ module.exports = function (User) {
 			openOutgoingLinksInNewTab: data.openOutgoingLinksInNewTab,
 			dailyDigestFreq: data.dailyDigestFreq || 'off',
 			usePagination: data.usePagination,
-			topicsPerPage: Math.min(data.topicsPerPage, parseInt(maxTopicsPerPage, 10) || 20),
-			postsPerPage: Math.min(data.postsPerPage, parseInt(maxPostsPerPage, 10) || 20),
+			topicsPerPage: Math.min(
+				data.topicsPerPage,
+				parseInt(maxTopicsPerPage, 10) || 20
+			),
+			postsPerPage: Math.min(
+				data.postsPerPage,
+				parseInt(maxPostsPerPage, 10) || 20
+			),
 			userLang: data.userLang || meta.config.defaultLang,
 			acpLang: data.acpLang || meta.config.defaultLang,
 			followTopicsOnCreate: data.followTopicsOnCreate,
@@ -139,7 +154,8 @@ module.exports = function (User) {
 			restrictChat: data.restrictChat,
 			topicSearchEnabled: data.topicSearchEnabled,
 			updateUrlWithPostIndex: data.updateUrlWithPostIndex,
-			homePageRoute: ((data.homePageRoute === 'custom' ? data.homePageCustom : data.homePageRoute) || '').replace(/^\//, ''),
+			homePageRoute: ((data.homePageRoute === 'custom' ? data.homePageCustom : data.homePageRoute) || '')
+				.replace(/^\//, ''),
 			scrollToMyPost: data.scrollToMyPost,
 			upvoteNotifFreq: data.upvoteNotifFreq,
 			bootswatchSkin: data.bootswatchSkin,
@@ -147,13 +163,18 @@ module.exports = function (User) {
 			categoryTopicSort: data.categoryTopicSort,
 			topicPostSort: data.topicPostSort,
 		};
+
 		const notificationTypes = await notifications.getAllNotificationTypes();
 		notificationTypes.forEach((notificationType) => {
 			if (data[notificationType]) {
 				settings[notificationType] = data[notificationType];
 			}
 		});
-		const result = await plugins.hooks.fire('filter:user.saveSettings', { uid: uid, settings: settings, data: data });
+		const result = await plugins.hooks.fire('filter:user.saveSettings', {
+			uid: uid,
+			settings: settings,
+			data: data,
+		});
 		await db.setObject(`user:${uid}:settings`, result.settings);
 		await User.updateDigestSetting(uid, data.dailyDigestFreq);
 		return await User.getSettings(uid);
