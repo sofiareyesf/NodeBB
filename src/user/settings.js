@@ -1,4 +1,3 @@
-
 'use strict';
 
 const validator = require('validator');
@@ -16,6 +15,7 @@ module.exports = function (User) {
 		postsPerPage: 20,
 		topicsPerPage: 20,
 	};
+
 	User.getSettings = async function (uid) {
 		if (parseInt(uid, 10) <= 0) {
 			const isSpider = parseInt(uid, 10) === -1;
@@ -96,24 +96,22 @@ module.exports = function (User) {
 		return defaultValue;
 	}
 
-	User.saveSettings = async function (uid, data) {
-		const maxPostsPerPage = meta.config.maxPostsPerPage || 20;
-		if (
-			!data.postsPerPage ||
-			parseInt(data.postsPerPage, 10) <= 1 ||
-			parseInt(data.postsPerPage, 10) > maxPostsPerPage
-		) {
+	// Helper function to validate pagination settings
+	function validatePagination(data, maxPostsPerPage, maxTopicsPerPage) {
+		if (!data.postsPerPage || parseInt(data.postsPerPage, 10) <= 1 || parseInt(data.postsPerPage, 10) > maxPostsPerPage) {
 			throw new Error(`[[error:invalid-pagination-value, 2, ${maxPostsPerPage}]]`);
 		}
 
-		const maxTopicsPerPage = meta.config.maxTopicsPerPage || 20;
-		if (
-			!data.topicsPerPage ||
-			parseInt(data.topicsPerPage, 10) <= 1 ||
-			parseInt(data.topicsPerPage, 10) > maxTopicsPerPage
-		) {
+		if (!data.topicsPerPage || parseInt(data.topicsPerPage, 10) <= 1 || parseInt(data.topicsPerPage, 10) > maxTopicsPerPage) {
 			throw new Error(`[[error:invalid-pagination-value, 2, ${maxTopicsPerPage}]]`);
 		}
+	}
+
+	User.saveSettings = async function (uid, data) {
+		const maxPostsPerPage = meta.config.maxPostsPerPage || 20;
+		const maxTopicsPerPage = meta.config.maxTopicsPerPage || 20;
+		
+		validatePagination(data, maxPostsPerPage, maxTopicsPerPage);
 
 		const languageCodes = await languages.listCodes();
 		if (data.userLang && !languageCodes.includes(data.userLang)) {
