@@ -82,7 +82,7 @@ module.exports = function (User) {
 		settings.categoryWatchState = getSetting(settings, 'categoryWatchState', 'notwatching');
 
 		const notificationTypes = await notifications.getAllNotificationTypes();
-		notificationTypes.forEach(notificationType => {
+		notificationTypes.forEach((notificationType) => {
 			settings[notificationType] = getSetting(settings, notificationType, 'notification');
 		});
 
@@ -165,7 +165,7 @@ module.exports = function (User) {
 		};
 
 		const notificationTypes = await notifications.getAllNotificationTypes();
-		notificationTypes.forEach(notificationType => {
+		notificationTypes.forEach((notificationType) => {
 			if (data[notificationType]) {
 				settings[notificationType] = data[notificationType];
 			}
