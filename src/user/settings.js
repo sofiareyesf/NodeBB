@@ -32,18 +32,18 @@ module.exports = function (User) {
 			return [];
 		}
 
-		const keys = uids.map((uid) => `user:${uid}:settings`);
+		const keys = uids.map(uid => `user:${uid}:settings`);
 		let settings = await db.getObjects(keys);
 		settings = settings.map((userSettings, index) => {
 			userSettings = userSettings || {};
 			userSettings.uid = uids[index];
 			return userSettings;
 		});
-		return await Promise.all(settings.map((s) => onSettingsLoaded(s.uid, s)));
+		return await Promise.all(settings.map(s => onSettingsLoaded(s.uid, s)));
 	};
 
 	async function onSettingsLoaded(uid, settings) {
-		const data = await plugins.hooks.fire('filter:user.getSettings', { uid: uid, settings: settings });
+		const data = await plugins.hooks.fire('filter:user.getSettings', { uid, settings });
 		settings = data.settings;
 
 		const defaultTopicsPerPage = meta.config.topicsPerPage;
@@ -82,7 +82,7 @@ module.exports = function (User) {
 		settings.categoryWatchState = getSetting(settings, 'categoryWatchState', 'notwatching');
 
 		const notificationTypes = await notifications.getAllNotificationTypes();
-		notificationTypes.forEach((notificationType) => {
+		notificationTypes.forEach(notificationType => {
 			settings[notificationType] = getSetting(settings, notificationType, 'notification');
 		});
 
@@ -131,7 +131,7 @@ module.exports = function (User) {
 		}
 		data.userLang = data.userLang || meta.config.defaultLang;
 
-		plugins.hooks.fire('action:user.saveSettings', { uid: uid, settings: data });
+		plugins.hooks.fire('action:user.saveSettings', { uid, settings: data });
 
 		const settings = {
 			showemail: data.showemail,
@@ -165,15 +165,15 @@ module.exports = function (User) {
 		};
 
 		const notificationTypes = await notifications.getAllNotificationTypes();
-		notificationTypes.forEach((notificationType) => {
+		notificationTypes.forEach(notificationType => {
 			if (data[notificationType]) {
 				settings[notificationType] = data[notificationType];
 			}
 		});
 		const result = await plugins.hooks.fire('filter:user.saveSettings', {
-			uid: uid,
-			settings: settings,
-			data: data,
+			uid,
+			settings,
+			data
 		});
 		await db.setObject(`user:${uid}:settings`, result.settings);
 		await User.updateDigestSetting(uid, data.dailyDigestFreq);
